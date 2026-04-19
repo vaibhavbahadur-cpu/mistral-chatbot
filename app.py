@@ -102,11 +102,10 @@ if "messages" not in st.session_state:
 if "temp_input" not in st.session_state:
     st.session_state.temp_input = ""
 
-# NEW: Callback function to handle the submission and clear the bar
 def handle_submit():
     if st.session_state.user_query.strip() != "":
         st.session_state.temp_input = st.session_state.user_query
-        st.session_state.user_query = "" # This works inside a callback!
+        st.session_state.user_query = "" 
 
 # 6. Display Chat History
 st.markdown('<div class="main-chat-container">', unsafe_allow_html=True)
@@ -121,21 +120,18 @@ c1, c2, c3 = st.columns([1, 4, 0.5])
 with c1:
     mode = st.selectbox("Mode", ["Fast", "Thinking", "Pro"], label_visibility="collapsed", key="active_mode")
 with c2:
-    # Use the on_change callback to trigger the clear
     st.text_input("Msg", label_visibility="collapsed", key="user_query", 
                   placeholder="Message Mistral...", on_change=handle_submit)
 with c3:
-    # Button also triggers the callback logic via a manual check
     send_clicked = st.button("🚀")
     if send_clicked:
         handle_submit()
 st.markdown('</div>', unsafe_allow_html=True)
 
 # 8. Execution Logic
-# We look for content in 'temp_input' which was filled by the callback
 if st.session_state.temp_input:
     query_to_send = st.session_state.temp_input
-    st.session_state.temp_input = "" # Reset temp storage
+    st.session_state.temp_input = "" 
     
     st.session_state.messages.append({"role": "user", "content": query_to_send})
     
@@ -148,7 +144,13 @@ if st.session_state.temp_input:
         
         with st.spinner(""):
             try:
-                m_map = {"Fast": "gemini-2.5-flash", "Thinking": "gemini-2.5-pro", "Pro": "gemini-2.5-pro"}
+                # Updated Mapping: Use 1.5 versions if 2.5 is not yet available for your key
+                m_map = {
+                    "Fast": "gemini-1.5-flash", 
+                    "Thinking": "gemini-1.5-pro", 
+                    "Pro": "gemini-1.5-pro"
+                }
+                
                 model = genai.GenerativeModel(
                     model_name=m_map[mode],
                     system_instruction="You are Mistral, a helpful and concise AI assistant."
@@ -165,7 +167,8 @@ if st.session_state.temp_input:
                 message_placeholder.markdown(full_response)
                 
             except Exception as e:
-                st.error(f"Error: {e}")
+                # This will tell you if it's a "Model not found" (404) or "Quota exceeded" (429) error
+                st.error(f"Model Error ({mode}): {e}")
 
     st.session_state.messages.append({"role": "assistant", "content": full_response})
     st.rerun()
