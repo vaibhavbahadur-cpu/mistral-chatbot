@@ -6,7 +6,7 @@ import base64
 # 1. Page Configuration
 st.set_page_config(page_title="Mistral AI", page_icon="🤖", layout="centered")
 
-# 2. CSS for the Atomic Single-Pill Bar
+# 2. CSS for the Unbreakable Atomic Pill
 st.markdown("""
     <style>
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -14,44 +14,38 @@ st.markdown("""
     .logo-container { display: flex; justify-content: center; padding: 10px; }
     .spinning-logo { width: 80px; border-radius: 50%; }
 
-    /* THE PILL CONTAINER */
-    div[data-testid="stVerticalBlock"] > div:has(div.stTextInput) {
+    /* THE PILL CONTAINER - Global fix */
+    div.pill-footer {
         position: fixed;
         bottom: 30px;
         left: 50%;
         transform: translateX(-50%);
-        width: 95% !important;
-        max-width: 850px !important; 
+        width: 95%;
+        max-width: 800px;
         background-color: #1e1e1e;
-        padding: 5px 15px !important;
+        padding: 5px 15px;
         border-radius: 50px;
         border: 1px solid #444;
-        z-index: 10000 !important;
-    }
-
-    /* FORCE FLEX: This prevents the 3-bar wrap */
-    div[data-testid="stHorizontalBlock"] {
+        z-index: 10000;
         display: flex !important;
         flex-direction: row !important;
-        flex-wrap: nowrap !important;
         align-items: center !important;
-        justify-content: space-between !important;
+        gap: 10px;
+    }
+
+    /* Target the text input within our custom container */
+    .pill-footer div[data-testid="stTextInput"] {
+        flex-grow: 1 !important;
         width: 100% !important;
     }
 
-    /* Target the columns directly */
-    div[data-testid="column"] {
-        width: auto !important;
-        flex: none !important;
-        min-width: 0px !important;
+    /* Target the dropdown within our custom container */
+    .pill-footer div[data-testid="stSelectbox"] {
+        width: 110px !important;
+        flex-shrink: 0 !important;
     }
 
-    /* Make the middle text column expand to fill the pill */
-    div[data-testid="column"]:nth-of-type(2) {
-        flex-grow: 1 !important;
-    }
-
-    /* Hide standard Streamlit chat UI */
+    /* Hide standard Streamlit chat UI elements */
     div[data-testid="stChatInput"], .stChatInputContainer {
         display: none !important;
     }
@@ -61,21 +55,17 @@ st.markdown("""
         border: none !important;
         color: white !important;
         height: 45px !important;
-        width: 100% !important;
     }
 
     .main-chat-container { margin-bottom: 120px; }
     
-    /* Small fixed width for Mode Selector */
     .stSelectbox div[data-baseweb="select"] {
         height: 35px;
         min-height: 35px;
         background-color: #333;
         border-radius: 20px;
-        width: 100px !important;
     }
 
-    /* Rocket Button Circle */
     button[kind="secondary"] {
         border-radius: 50% !important;
         width: 42px !important;
@@ -84,9 +74,6 @@ st.markdown("""
         background-color: #2b2b2b !important;
         border: none !important;
         padding: 0 !important;
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -117,17 +104,17 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 7. THE ONE-BAR CHAT INTERFACE
-with st.container():
-    # Force ratios and rely on the CSS 'flex-wrap: nowrap' to keep it in 1 bar
-    c1, c2, c3 = st.columns([1, 4, 0.5])
-    
-    with c1:
-        mode = st.selectbox("Mode", ["Fast", "Thinking", "Pro"], label_visibility="collapsed", key="active_mode")
-    with c2:
-        user_input = st.text_input("Msg", label_visibility="collapsed", key="user_query", placeholder="Message Mistral...")
-    with c3:
-        send_clicked = st.button("🚀")
+# 7. THE ONE-BAR CHAT INTERFACE (Bypassing st.columns)
+# This raw HTML wrapper forces the items into one line regardless of screen size
+st.markdown('<div class="pill-footer">', unsafe_allow_html=True)
+col1, col2, col3 = st.columns([1, 4, 0.5])
+with col1:
+    mode = st.selectbox("Mode", ["Fast", "Thinking", "Pro"], label_visibility="collapsed", key="active_mode")
+with col2:
+    user_input = st.text_input("Msg", label_visibility="collapsed", key="user_query", placeholder="Message Mistral...")
+with col3:
+    send_clicked = st.button("🚀")
+st.markdown('</div>', unsafe_allow_html=True)
 
 # 8. Execution Logic
 if (send_clicked or (user_input and st.session_state.get('last_query') != user_input)) and user_input:
