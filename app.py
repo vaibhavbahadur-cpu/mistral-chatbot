@@ -6,7 +6,7 @@ import base64
 # 1. Page Configuration
 st.set_page_config(page_title="Mistral AI", page_icon="🤖", layout="centered")
 
-# 2. CSS for the Unbreakable Single Pill
+# 2. CSS for the Atomic Single-Pill Bar
 st.markdown("""
     <style>
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -14,41 +14,41 @@ st.markdown("""
     .logo-container { display: flex; justify-content: center; padding: 10px; }
     .spinning-logo { width: 80px; border-radius: 50%; }
 
-    /* THE PILL CONTAINER - Widened and forced to 1 line */
+    /* THE PILL CONTAINER */
     div[data-testid="stVerticalBlock"] > div:has(div.stTextInput) {
         position: fixed;
-        bottom: 25px;
+        bottom: 30px;
         left: 50%;
         transform: translateX(-50%);
         width: 95% !important;
-        max-width: 900px !important; 
+        max-width: 850px !important; 
         background-color: #1e1e1e;
         padding: 5px 15px !important;
         border-radius: 50px;
         border: 1px solid #444;
         z-index: 10000 !important;
-        display: block !important; /* Block container for the flex children */
     }
 
-    /* FORCE FLEX: This is the magic part that stops the 3-bar stack */
-    div[data-testid="stVerticalBlock"] > div:has(div.stTextInput) > div {
+    /* FORCE FLEX: This prevents the 3-bar wrap */
+    div[data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
         align-items: center !important;
-        gap: 10px !important;
+        justify-content: space-between !important;
+        width: 100% !important;
     }
 
-    /* Remove Streamlit column gaps and force horizontal behavior */
+    /* Target the columns directly */
     div[data-testid="column"] {
         width: auto !important;
         flex: none !important;
         min-width: 0px !important;
     }
 
-    /* Make the message input fill the middle */
+    /* Make the middle text column expand to fill the pill */
     div[data-testid="column"]:nth-of-type(2) {
-        flex: 1 1 auto !important;
+        flex-grow: 1 !important;
     }
 
     /* Hide standard Streamlit chat UI */
@@ -61,20 +61,21 @@ st.markdown("""
         border: none !important;
         color: white !important;
         height: 45px !important;
+        width: 100% !important;
     }
 
     .main-chat-container { margin-bottom: 120px; }
     
-    /* Mode Selector Style */
+    /* Small fixed width for Mode Selector */
     .stSelectbox div[data-baseweb="select"] {
         height: 35px;
         min-height: 35px;
         background-color: #333;
         border-radius: 20px;
-        width: 110px !important;
+        width: 100px !important;
     }
 
-    /* Rocket Button Style */
+    /* Rocket Button Circle */
     button[kind="secondary"] {
         border-radius: 50% !important;
         width: 42px !important;
@@ -83,6 +84,9 @@ st.markdown("""
         background-color: #2b2b2b !important;
         border: none !important;
         padding: 0 !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -113,9 +117,9 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 7. THE UNBREAKABLE CHAT BAR
+# 7. THE ONE-BAR CHAT INTERFACE
 with st.container():
-    # We use st.columns but the CSS above forces them to NEVER wrap
+    # Force ratios and rely on the CSS 'flex-wrap: nowrap' to keep it in 1 bar
     c1, c2, c3 = st.columns([1, 4, 0.5])
     
     with c1:
