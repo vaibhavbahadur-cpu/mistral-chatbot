@@ -14,9 +14,9 @@ if "GEMINI_API_KEY" not in st.secrets:
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
 # 4. Initialize Model with Persona
-# UPDATED: Using gemini-3-flash (the current 2026 stable standard)
+# Using the stable 2.5 series model name
 model = genai.GenerativeModel(
-    model_name="gemini-3-flash",
+    model_name="gemini-2.5-flash",
     system_instruction="You are Mistral, a helpful and concise AI assistant. Always identify as Mistral."
 )
 
@@ -39,7 +39,7 @@ if prompt := st.chat_input("Ask Mistral something..."):
         message_placeholder = st.empty()
         full_response = ""
         
-        # Prepare history for the API
+        # Format history: 'assistant' must be 'model' for the API
         history = [
             {"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]}
             for m in st.session_state.messages[:-1]
@@ -56,6 +56,10 @@ if prompt := st.chat_input("Ask Mistral something..."):
             message_placeholder.markdown(full_response)
         except Exception as e:
             st.error(f"Error: {e}")
-            full_response = "I encountered an error. Please check the logs."
+            # If 2.5 still fails, this will show you exactly what names are valid
+            with st.expander("Show available model names"):
+                for m in genai.list_models():
+                    if 'generateContent' in m.supported_generation_methods:
+                        st.code(m.name)
 
     st.session_state.messages.append({"role": "assistant", "content": full_response})
