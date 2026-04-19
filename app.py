@@ -6,7 +6,7 @@ import base64
 # 1. Page Configuration
 st.set_page_config(page_title="Mistral AI", page_icon="🤖", layout="centered")
 
-# 2. CSS for the Unbreakable Atomic Pill
+# 2. CSS for the Locked Single-Pill Bottom Bar
 st.markdown("""
     <style>
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -14,38 +14,45 @@ st.markdown("""
     .logo-container { display: flex; justify-content: center; padding: 10px; }
     .spinning-logo { width: 80px; border-radius: 50%; }
 
-    /* THE PILL CONTAINER - Global fix */
-    div.pill-footer {
+    /* THE PILL FOOTER - Locked to bottom and forced to one line */
+    .pill-footer {
         position: fixed;
         bottom: 30px;
         left: 50%;
         transform: translateX(-50%);
         width: 95%;
-        max-width: 800px;
+        max-width: 850px;
         background-color: #1e1e1e;
-        padding: 5px 15px;
+        padding: 8px 15px;
         border-radius: 50px;
         border: 1px solid #444;
-        z-index: 10000;
+        z-index: 10000 !important;
         display: flex !important;
         flex-direction: row !important;
+        flex-wrap: nowrap !important;
         align-items: center !important;
         gap: 10px;
     }
 
-    /* Target the text input within our custom container */
-    .pill-footer div[data-testid="stTextInput"] {
-        flex-grow: 1 !important;
+    /* Force the Streamlit columns inside the footer to stay horizontal */
+    .pill-footer > div[data-testid="stHorizontalBlock"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
         width: 100% !important;
+        align-items: center !important;
     }
 
-    /* Target the dropdown within our custom container */
-    .pill-footer div[data-testid="stSelectbox"] {
-        width: 110px !important;
-        flex-shrink: 0 !important;
+    /* Column Width Fixes */
+    div[data-testid="column"] {
+        width: auto !important;
+        flex: none !important;
+    }
+    div[data-testid="column"]:nth-of-type(2) {
+        flex-grow: 1 !important;
     }
 
-    /* Hide standard Streamlit chat UI elements */
+    /* Hide standard UI */
     div[data-testid="stChatInput"], .stChatInputContainer {
         display: none !important;
     }
@@ -64,13 +71,13 @@ st.markdown("""
         min-height: 35px;
         background-color: #333;
         border-radius: 20px;
+        width: 110px !important;
     }
 
     button[kind="secondary"] {
         border-radius: 50% !important;
         width: 42px !important;
         height: 42px !important;
-        min-width: 42px !important;
         background-color: #2b2b2b !important;
         border: none !important;
         padding: 0 !important;
@@ -104,15 +111,15 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 7. THE ONE-BAR CHAT INTERFACE (Bypassing st.columns)
-# This raw HTML wrapper forces the items into one line regardless of screen size
+# 7. THE ONE-BAR CHAT INTERFACE
+# The 'pill-footer' class now handles the fixed positioning and the single-line constraint.
 st.markdown('<div class="pill-footer">', unsafe_allow_html=True)
-col1, col2, col3 = st.columns([1, 4, 0.5])
-with col1:
+c1, c2, c3 = st.columns([1, 4, 0.5])
+with c1:
     mode = st.selectbox("Mode", ["Fast", "Thinking", "Pro"], label_visibility="collapsed", key="active_mode")
-with col2:
+with c2:
     user_input = st.text_input("Msg", label_visibility="collapsed", key="user_query", placeholder="Message Mistral...")
-with col3:
+with c3:
     send_clicked = st.button("🚀")
 st.markdown('</div>', unsafe_allow_html=True)
 
