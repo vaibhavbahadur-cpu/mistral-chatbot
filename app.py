@@ -34,7 +34,6 @@ st.markdown("""
         gap: 10px;
     }
 
-    /* Force the Streamlit columns inside the footer to stay horizontal */
     .pill-footer > div[data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
@@ -43,7 +42,6 @@ st.markdown("""
         align-items: center !important;
     }
 
-    /* Column Width Fixes */
     div[data-testid="column"] {
         width: auto !important;
         flex: none !important;
@@ -52,7 +50,6 @@ st.markdown("""
         flex-grow: 1 !important;
     }
 
-    /* Hide standard UI */
     div[data-testid="stChatInput"], .stChatInputContainer {
         display: none !important;
     }
@@ -100,9 +97,11 @@ if "GEMINI_API_KEY" not in st.secrets:
     st.stop()
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
-# 5. Initialize Chat History
+# 5. Initialize Session State
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "user_query" not in st.session_state:
+    st.session_state.user_query = ""
 
 # 6. Display Chat History
 st.markdown('<div class="main-chat-container">', unsafe_allow_html=True)
@@ -112,24 +111,31 @@ for message in st.session_state.messages:
 st.markdown('</div>', unsafe_allow_html=True)
 
 # 7. THE ONE-BAR CHAT INTERFACE
-# The 'pill-footer' class now handles the fixed positioning and the single-line constraint.
 st.markdown('<div class="pill-footer">', unsafe_allow_html=True)
 c1, c2, c3 = st.columns([1, 4, 0.5])
 with c1:
     mode = st.selectbox("Mode", ["Fast", "Thinking", "Pro"], label_visibility="collapsed", key="active_mode")
 with c2:
+    # We bind the input to st.session_state.user_query
     user_input = st.text_input("Msg", label_visibility="collapsed", key="user_query", placeholder="Message Mistral...")
 with c3:
     send_clicked = st.button("🚀")
 st.markdown('</div>', unsafe_allow_html=True)
 
 # 8. Execution Logic
-if (send_clicked or (user_input and st.session_state.get('last_query') != user_input)) and user_input:
-    st.session_state.last_query = user_input
-    st.session_state.messages.append({"role": "user", "content": user_input})
+# We check if a message exists and trigger processing
+if (send_clicked or user_input) and user_input.strip() != "":
+    # Save the query before clearing it
+    query_to_send = user_input
+    
+    # CLEAR THE BAR: Reset the session state value for the input field
+    st.session_state.user_query = ""
+    
+    # Add to history
+    st.session_state.messages.append({"role": "user", "content": query_to_send})
     
     with st.chat_message("user"):
-        st.markdown(user_input)
+        st.markdown(query_to_send)
             
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
@@ -145,7 +151,7 @@ if (send_clicked or (user_input and st.session_state.get('last_query') != user_i
                 
                 history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.messages[:-1]]
                 chat = model.start_chat(history=history)
-                response = chat.send_message(user_input, stream=True)
+                response = chat.send_message(query_to_send, stream=True)
                 
                 for chunk in response:
                     if chunk.text:
@@ -157,4 +163,5 @@ if (send_clicked or (user_input and st.session_state.get('last_query') != user_i
                 st.error(f"Error: {e}")
 
     st.session_state.messages.append({"role": "assistant", "content": full_response})
+    # Rerun ensures the UI updates and the text bar looks empty to the user
     st.rerun()
