@@ -30,15 +30,27 @@ st.markdown("""
         z-index: 10000 !important;
     }
 
-    /* Force the Streamlit columns to NOT wrap (keeps it in 1 bar) */
-    div[data-testid="stVerticalBlock"] > div:has(div.stTextInput) > div[data-testid="stHorizontalBlock"] {
+    /* CRITICAL FIX: This forces the columns to stay side-by-side */
+    div[data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
-        align-items: center !important;
         flex-wrap: nowrap !important;
+        align-items: center !important;
     }
 
-    /* Remove extra padding and default Streamlit chat elements */
+    /* Remove default Streamlit padding that pushes things out of the pill */
+    div[data-testid="column"] {
+        width: fit-content !important;
+        flex: unset !important;
+        min-width: unset !important;
+    }
+
+    /* Make the text input column grow to fill space */
+    div[data-testid="column"]:nth-of-type(2) {
+        flex-grow: 1 !important;
+    }
+
+    /* Hide standard Streamlit chat elements */
     div[data-testid="stChatInput"], .stChatInputContainer {
         display: none !important;
     }
@@ -51,7 +63,6 @@ st.markdown("""
 
     .main-chat-container { margin-bottom: 120px; }
     
-    /* Small adjustments to dropdown height */
     .stSelectbox div[data-baseweb="select"] {
         height: 38px;
         min-height: 38px;
@@ -89,7 +100,6 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 # 7. THE UNIFIED CHAT BAR
 with st.container():
-    # Using flex-based columns: [Dropdown | Text Input | Send Button]
     c1, c2, c3 = st.columns([1, 4, 0.5])
     
     with c1:
@@ -113,21 +123,13 @@ if (send_clicked or (user_input and st.session_state.get('last_query') != user_i
         
         with st.spinner(""):
             try:
-                m_map = {
-                    "Fast": "gemini-2.5-flash", 
-                    "Thinking": "gemini-2.5-pro", 
-                    "Pro": "gemini-2.5-pro"
-                }
+                m_map = {"Fast": "gemini-2.5-flash", "Thinking": "gemini-2.5-pro", "Pro": "gemini-2.5-pro"}
                 model = genai.GenerativeModel(
                     model_name=m_map[mode],
                     system_instruction="You are Mistral, a helpful and concise AI assistant."
                 )
                 
-                history = [
-                    {"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} 
-                    for m in st.session_state.messages[:-1]
-                ]
-                
+                history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.messages[:-1]]
                 chat = model.start_chat(history=history)
                 response = chat.send_message(user_input, stream=True)
                 
