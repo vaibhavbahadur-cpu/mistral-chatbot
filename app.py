@@ -25,7 +25,7 @@ width: 700px; /* This is a standard width for computer chat bars */
         background-color: #1e1e1e;
         padding: 5px 10px;
         border-radius: 30px;
-        border: 1px solid #444;
+       z-index: 99999 !important;
         z-index: 1000;
     }
     
@@ -43,6 +43,11 @@ width: 700px; /* This is a standard width for computer chat bars */
     .stSelectbox div[data-baseweb="select"] {
         height: 40px;
         min-height: 40px;
+        /* ADD THIS to hide the ghost bar */
+    div[data-testid="stChatInput"] {
+        display: none !important;
+        visibility: hidden !important;
+    }
     }
     </style>
     """, unsafe_allow_html=True)
