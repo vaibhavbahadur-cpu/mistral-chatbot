@@ -6,7 +6,7 @@ import base64
 # 1. Page Configuration
 st.set_page_config(page_title="Mistral AI", page_icon="🤖", layout="centered")
 
-# 2. CSS for the Integrated Chat Bar & Spinning Logo
+# 2. CSS for Mobile-Responsive Integrated Chat Bar & Spinning Logo
 st.markdown("""
     <style>
     @keyframes spin {
@@ -22,29 +22,38 @@ st.markdown("""
         padding: 10px;
     }
     .spinning-logo {
-        width: 100px;
+        width: 80px;
         border-radius: 50%;
     }
     
-    /* CUSTOM CHAT BAR STYLING */
-    /* This wraps the selectbox and text input to look like one unit */
-    .stTextArea textarea {
-        background-color: #212121;
+    /* MOBILE OPTIMIZED CHAT BAR */
+    /* This creates a floating bar that stays visible above mobile keyboards */
+    div[data-testid="stVerticalBlock"] > div:has(div.stTextInput) {
+        position: fixed;
+        bottom: 20px;
+        left: 5%;
+        right: 5%;
+        background-color: #1e1e1e;
+        padding: 10px;
+        border-radius: 25px;
+        border: 1px solid #333;
+        z-index: 1000;
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
+    }
+
+    /* Fix for button and selectbox alignment on mobile */
+    .stButton button {
         border-radius: 20px;
-        border: 1px solid #424242;
-        padding-right: 50px;
+        height: 3rem;
     }
     
-    /* Centers the bottom bar and reduces spacing */
-    div[data-testid="stHorizontalBlock"] {
-        background-color: #1e1e1e;
-        padding: 8px 15px;
-        border-radius: 30px;
-        border: 1px solid #333;
-        align-items: center;
-        position: fixed;
-        bottom: 30px;
-        z-index: 100;
+    .stSelectbox div[data-baseweb="select"] {
+        border-radius: 20px;
+    }
+
+    /* Ensures the chat history doesn't get hidden behind the bar */
+    .main-chat-container {
+        margin-bottom: 120px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -69,70 +78,81 @@ genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# 6. Display Chat History (with a spacer for the fixed bottom bar)
-chat_container = st.container()
-with chat_container:
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-st.markdown("<br><br><br><br>", unsafe_allow_html=True)
+# 6. Display Chat History inside a div with margin for the bottom bar
+st.markdown('<div class="main-chat-container">', unsafe_allow_html=True)
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+st.markdown('</div>', unsafe_allow_html=True)
 
-# 7. THE INTEGRATED CHAT BAR
-# We use a form so the 'Enter' key works to send
+# 7. THE MOBILE-FRIENDLY INTEGRATED BAR
+# We use a container to wrap the columns for the fixed positioning
 with st.container():
-    col_tools, col_input, col_btn = st.columns([0.2, 0.6, 0.2])
+    # On mobile, these columns will stack or shrink. 
+    # [1.5, 5, 1.2] provides a better balance for narrow screens
+    col_tools, col_input, col_btn = st.columns([1.5, 5, 1.2])
     
     with col_tools:
-        # The dropdown like the 'Fast' button in your photo
         mode = st.selectbox(
             "Mode",
             ["Fast", "Thinking", "Pro"],
             label_visibility="collapsed",
-            index=0
+            index=0,
+            key="mode_select"
         )
         
     with col_input:
-        # A text area that looks like a chat box
-        user_input = st.text_input("Message Mistral...", label_visibility="collapsed", key="user_query")
+        user_input = st.text_input(
+            "Message...", 
+            label_visibility="collapsed", 
+            key="user_query",
+            placeholder="Type here..."
+        )
         
     with col_btn:
-        send_clicked = st.button("▶️", use_container_width=True)
+        # Use a simple arrow icon for the button
+        send_clicked = st.button("🚀", use_container_width=True)
 
 # 8. Execution Logic
-if send_clicked and user_input:
+if (send_clicked or (user_input and st.session_state.get('last_input') != user_input)) and user_input:
+    st.session_state.last_input = user_input
     st.session_state.messages.append({"role": "user", "content": user_input})
     
-    # Process immediately
-    with chat_container:
-        with st.chat_message("user"):
-            st.markdown(user_input)
+    with st.chat_message("user"):
+        st.markdown(user_input)
             
-        with st.chat_message("assistant"):
-            message_placeholder = st.empty()
-            full_response = ""
-            
-            with st.spinner(f"Mistral {mode}..."):
-                try:
-                    # Model Mapping
-                    model_map = {"Fast": "gemini-3.1-flash", "Thinking": "gemini-3.1-pro", "Pro": "gemini-3.1-pro"}
-                    model = genai.GenerativeModel(model_name=model_map[mode])
-                    
-                    history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} 
-                               for m in st.session_state.messages[:-1]]
-                    
-                    chat_session = model.start_chat(history=history)
-                    response = chat_session.send_message(user_input, stream=True)
-                    
-                    for chunk in response:
-                        if chunk.text:
-                            full_response += chunk.text
-                            message_placeholder.markdown(full_response + "▌")
-                    message_placeholder.markdown(full_response)
-                    
-                except Exception as e:
-                    st.error(f"Error: {e}")
-                    full_response = "Error connecting to AI."
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        full_response = ""
+        
+        with st.spinner(f"Mistral {mode}..."):
+            try:
+                # Using Gemini 3.1 stable names for 2026
+                model_map = {
+                    "Fast": "gemini-3.1-flash", 
+                    "Thinking": "gemini-3.1-pro", 
+                    "Pro": "gemini-3.1-ultra"
+                }
+                model = genai.GenerativeModel(
+                    model_name=model_map[st.session_state.mode_select],
+                    system_instruction="You are Mistral, a concise AI assistant."
+                )
+                
+                history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} 
+                           for m in st.session_state.messages[:-1]]
+                
+                chat_session = model.start_chat(history=history)
+                response = chat_session.send_message(user_input, stream=True)
+                
+                for chunk in response:
+                    if chunk.text:
+                        full_response += chunk.text
+                        message_placeholder.markdown(full_response + "▌")
+                message_placeholder.markdown(full_response)
+                
+            except Exception as e:
+                st.error(f"Error: {e}")
+                full_response = "Connection error."
 
     st.session_state.messages.append({"role": "assistant", "content": full_response})
-    # Reset input after sending
     st.rerun()
