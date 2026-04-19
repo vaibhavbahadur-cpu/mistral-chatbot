@@ -6,7 +6,7 @@ import base64
 # 1. Page Configuration
 st.set_page_config(page_title="Mistral AI", page_icon="🤖", layout="centered")
 
-# 2. CSS for the Atomic Pill (Zero-Wrap Design)
+# 2. CSS for the Wide-Reach Unified Bar
 st.markdown("""
     <style>
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -14,79 +14,79 @@ st.markdown("""
     .logo-container { display: flex; justify-content: center; padding: 10px; }
     .spinning-logo { width: 80px; border-radius: 50%; }
 
-    /* THE PILL CONTAINER - Forces a single height and no wrapping */
+    /* THE PILL CONTAINER - Widened and shifted for reachability */
     div[data-testid="stVerticalBlock"] > div:has(div.stTextInput) {
         position: fixed;
         bottom: 30px;
         left: 50%;
         transform: translateX(-50%);
-        width: 90%;
-        max-width: 750px; 
+        width: 95%; /* Wider bar for easier typing */
+        max-width: 900px; 
         background-color: #1e1e1e;
-        padding: 0px 10px;
+        padding: 5px 15px;
         border-radius: 50px;
         border: 1px solid #444;
         z-index: 10000 !important;
-        height: 60px !important;
         display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
-        overflow: hidden !important;
     }
 
-    /* Force the inner block to never wrap */
+    /* Force the columns to stay in a single line */
     div[data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
         width: 100% !important;
         align-items: center !important;
+        gap: 10px !important;
     }
 
-    /* Remove Streamlit's forced column widths */
+    /* Column Width Management */
     div[data-testid="column"] {
         width: auto !important;
         flex: none !important;
     }
 
-    /* Make the Msg box fill the space in the middle */
+    /* Make the text input (Column 2) take up almost all the space */
     div[data-testid="column"]:nth-of-type(2) {
         flex-grow: 1 !important;
     }
 
-    /* Hide standard Streamlit chat UI */
+    /* Remove Streamlit default chat bar */
     div[data-testid="stChatInput"], .stChatInputContainer {
         display: none !important;
     }
 
+    /* Styling the Text Box so it is clickable */
     .stTextInput input {
         background-color: transparent !important;
         border: none !important;
         color: white !important;
-        height: 50px !important;
+        height: 45px !important;
+        width: 100% !important;
     }
 
     .main-chat-container { margin-bottom: 120px; }
     
-    /* Small Pill for the Mode Selector */
+    /* Lowered and Styled Mode Selector */
     .stSelectbox div[data-baseweb="select"] {
         height: 35px;
         min-height: 35px;
         background-color: #333;
-        border-radius: 20px;
-        width: 100px !important;
+        border-radius: 15px;
+        width: 120px !important;
+        font-size: 14px !important;
     }
 
-    /* Send Button as a Circle */
+    /* Rocket Button */
     button[kind="secondary"] {
         border-radius: 50% !important;
         width: 45px !important;
         height: 45px !important;
         min-width: 45px !important;
-        padding: 0 !important;
-        border: none !important;
         background-color: #2b2b2b !important;
-        margin-left: 5px;
+        border: none !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -117,13 +117,13 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 7. THE ATOMIC CHAT BAR
+# 7. THE WIDE CHAT BAR
 with st.container():
-    # We use very tight ratios to prevent overflow
-    c1, c2, c3 = st.columns([0.2, 0.7, 0.1])
+    # Ratios set to give Column 2 (the text box) the maximum clickable area
+    c1, c2, c3 = st.columns([1, 5, 0.5])
     
     with c1:
-        mode = st.selectbox("M", ["Fast", "Thinking", "Pro"], label_visibility="collapsed", key="active_mode")
+        mode = st.selectbox("Mode", ["Fast", "Thinking", "Pro"], label_visibility="collapsed", key="active_mode")
     with c2:
         user_input = st.text_input("Msg", label_visibility="collapsed", key="user_query", placeholder="Message Mistral...")
     with c3:
