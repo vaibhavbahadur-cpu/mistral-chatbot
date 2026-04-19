@@ -6,7 +6,7 @@ import base64
 # 1. Page Configuration
 st.set_page_config(page_title="Mistral AI", page_icon="🤖", layout="centered")
 
-# 2. CSS for the Spinning Logo & Unified Pill Chat Bar
+# 2. CSS for the Unified Single-Pill Chat Bar
 st.markdown("""
     <style>
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -15,7 +15,7 @@ st.markdown("""
     .logo-container { display: flex; justify-content: center; padding: 10px; }
     .spinning-logo { width: 80px; border-radius: 50%; }
 
-    /* THE UNIFIED PILL BAR - Forces everything into ONE line */
+    /* THE PILL CONTAINER */
     div[data-testid="stVerticalBlock"] > div:has(div.stTextInput) {
         position: fixed;
         bottom: 30px;
@@ -30,27 +30,28 @@ st.markdown("""
         z-index: 10000 !important;
     }
 
-    /* CRITICAL FIX: This forces the columns to stay side-by-side */
+    /* FORCE ONE ROW: This kills Streamlit's column stacking */
     div[data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
         align-items: center !important;
+        gap: 10px !important;
     }
 
-    /* Remove default Streamlit padding that pushes things out of the pill */
+    /* Target the individual columns to remove extra whitespace */
     div[data-testid="column"] {
-        width: fit-content !important;
-        flex: unset !important;
-        min-width: unset !important;
+        width: auto !important;
+        flex: none !important;
+        min-width: 0px !important;
     }
 
-    /* Make the text input column grow to fill space */
+    /* Make the middle text column grow to fill the bar */
     div[data-testid="column"]:nth-of-type(2) {
         flex-grow: 1 !important;
     }
 
-    /* Hide standard Streamlit chat elements */
+    /* Hide the default Streamlit chat input area */
     div[data-testid="stChatInput"], .stChatInputContainer {
         display: none !important;
     }
@@ -59,15 +60,28 @@ st.markdown("""
         background-color: transparent !important;
         border: none !important;
         color: white !important;
+        padding-left: 10px !important;
     }
 
     .main-chat-container { margin-bottom: 120px; }
     
+    /* Style the dropdown pill */
     .stSelectbox div[data-baseweb="select"] {
         height: 38px;
         min-height: 38px;
         background-color: #2b2b2b;
         border-radius: 20px;
+        width: 110px; /* Fixed width for the mode selector */
+    }
+    
+    /* Style the Send button */
+    button[kind="secondary"] {
+        border-radius: 50% !important;
+        width: 40px !important;
+        height: 40px !important;
+        padding: 0 !important;
+        border: none !important;
+        background-color: #333 !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -100,6 +114,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 # 7. THE UNIFIED CHAT BAR
 with st.container():
+    # Ratios are less important now because CSS Flex is controlling the size
     c1, c2, c3 = st.columns([1, 4, 0.5])
     
     with c1:
@@ -107,7 +122,7 @@ with st.container():
     with c2:
         user_input = st.text_input("Msg", label_visibility="collapsed", key="user_query", placeholder="Message Mistral...")
     with c3:
-        send_clicked = st.button("🚀", use_container_width=True)
+        send_clicked = st.button("🚀")
 
 # 8. Execution Logic
 if (send_clicked or (user_input and st.session_state.get('last_query') != user_input)) and user_input:
