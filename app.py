@@ -15,20 +15,29 @@ st.markdown("""
     .logo-container { display: flex; justify-content: center; padding: 10px; }
     .spinning-logo { width: 80px; border-radius: 50%; }
 
-    /* FIXED BOTTOM BAR - Shortened for Mobile */
+    /* FIXED BOTTOM BAR - Optimized for Computer and Mobile Visibility */
     div[data-testid="stVerticalBlock"] > div:has(div.stTextInput) {
         position: fixed;
-        bottom: 20px;
+        bottom: 30px;
         left: 50%;
-transform: translateX(-50%);
-width: 700px; /* This is a standard width for computer chat bars */
+        transform: translateX(-50%);
+        width: 90%;
+        max-width: 850px; 
         background-color: #1e1e1e;
-        padding: 5px 10px;
-        border-radius: 30px;
-       z-index: 99999 !important;
-        z-index: 1000;
+        padding: 8px 16px;
+        border-radius: 40px;
+        border: 1px solid #444;
+        z-index: 99999 !important; /* Forces bar to the very front */
+        display: flex !important;
+        align-items: center !important;
     }
     
+    /* HIDE THE DEFAULT OVERLAPPING BAR */
+    div[data-testid="stChatInput"], .stChatInputContainer {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
     /* Make the input blend into the bar */
     .stTextInput input {
         background-color: transparent !important;
@@ -37,17 +46,12 @@ width: 700px; /* This is a standard width for computer chat bars */
     }
 
     /* Push chat messages up so they aren't covered */
-    .main-chat-container { margin-bottom: 110px; }
+    .main-chat-container { margin-bottom: 120px; }
     
     /* Shrink the selectbox/dropdown height */
     .stSelectbox div[data-baseweb="select"] {
         height: 40px;
         min-height: 40px;
-        /* ADD THIS to hide the ghost bar */
-    div[data-testid="stChatInput"] {
-        display: none !important;
-        visibility: hidden !important;
-    }
     }
     </style>
     """, unsafe_allow_html=True)
@@ -80,8 +84,8 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 # 7. THE SHORT INTEGRATED CHAT BAR
 with st.container():
-    # Ratios [Dropdown, Text, Send Button] - tuned to keep everything on-screen
-    c1, c2, c3 = st.columns([1, 4, 0.5])
+    # Adjusted Ratios [Dropdown, Text, Send Button] for desktop/mobile balance
+    c1, c2, c3 = st.columns([1.2, 4, 0.6])
     
     with c1:
         # The Fast/Thinking/Pro dropdown
@@ -94,7 +98,6 @@ with st.container():
         send_clicked = st.button("🚀", use_container_width=True)
 
 # 8. Execution Logic (Using Gemini 2.5)
-# This handles both the 'Enter' key and the button click
 if (send_clicked or (user_input and st.session_state.get('last_query') != user_input)) and user_input:
     st.session_state.last_query = user_input
     st.session_state.messages.append({"role": "user", "content": user_input})
