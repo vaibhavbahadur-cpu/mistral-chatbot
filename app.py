@@ -19,8 +19,9 @@ st.markdown("""
     div[data-testid="stVerticalBlock"] > div:has(div.stTextInput) {
         position: fixed;
         bottom: 20px;
-        left: 2%;
-        right: 2%;
+        left: 50%;
+transform: translateX(-50%);
+width: 700px; /* This is a standard width for computer chat bars */
         background-color: #1e1e1e;
         padding: 5px 10px;
         border-radius: 30px;
@@ -75,7 +76,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 # 7. THE SHORT INTEGRATED CHAT BAR
 with st.container():
     # Ratios [Dropdown, Text, Send Button] - tuned to keep everything on-screen
-    c1, c2, c3 = st.columns([1.1, 2.8, 0.7])
+    c1, c2, c3 = st.columns([1, 4, 0.5])
     
     with c1:
         # The Fast/Thinking/Pro dropdown
