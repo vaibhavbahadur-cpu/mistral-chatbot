@@ -6,7 +6,7 @@ import base64
 # 1. Page Configuration
 st.set_page_config(page_title="Mistral AI", page_icon="🤖", layout="centered")
 
-# 2. CSS for the Wide-Reach Unified Bar
+# 2. CSS for the Unbreakable Single Pill
 st.markdown("""
     <style>
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -14,79 +14,75 @@ st.markdown("""
     .logo-container { display: flex; justify-content: center; padding: 10px; }
     .spinning-logo { width: 80px; border-radius: 50%; }
 
-    /* THE PILL CONTAINER - Widened and shifted for reachability */
+    /* THE PILL CONTAINER - Widened and forced to 1 line */
     div[data-testid="stVerticalBlock"] > div:has(div.stTextInput) {
         position: fixed;
-        bottom: 30px;
+        bottom: 25px;
         left: 50%;
         transform: translateX(-50%);
-        width: 95%; /* Wider bar for easier typing */
-        max-width: 900px; 
+        width: 95% !important;
+        max-width: 900px !important; 
         background-color: #1e1e1e;
-        padding: 5px 15px;
+        padding: 5px 15px !important;
         border-radius: 50px;
         border: 1px solid #444;
         z-index: 10000 !important;
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center !important;
+        display: block !important; /* Block container for the flex children */
     }
 
-    /* Force the columns to stay in a single line */
-    div[data-testid="stHorizontalBlock"] {
+    /* FORCE FLEX: This is the magic part that stops the 3-bar stack */
+    div[data-testid="stVerticalBlock"] > div:has(div.stTextInput) > div {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
-        width: 100% !important;
         align-items: center !important;
         gap: 10px !important;
     }
 
-    /* Column Width Management */
+    /* Remove Streamlit column gaps and force horizontal behavior */
     div[data-testid="column"] {
         width: auto !important;
         flex: none !important;
+        min-width: 0px !important;
     }
 
-    /* Make the text input (Column 2) take up almost all the space */
+    /* Make the message input fill the middle */
     div[data-testid="column"]:nth-of-type(2) {
-        flex-grow: 1 !important;
+        flex: 1 1 auto !important;
     }
 
-    /* Remove Streamlit default chat bar */
+    /* Hide standard Streamlit chat UI */
     div[data-testid="stChatInput"], .stChatInputContainer {
         display: none !important;
     }
 
-    /* Styling the Text Box so it is clickable */
     .stTextInput input {
         background-color: transparent !important;
         border: none !important;
         color: white !important;
         height: 45px !important;
-        width: 100% !important;
     }
 
     .main-chat-container { margin-bottom: 120px; }
     
-    /* Lowered and Styled Mode Selector */
+    /* Mode Selector Style */
     .stSelectbox div[data-baseweb="select"] {
         height: 35px;
         min-height: 35px;
         background-color: #333;
-        border-radius: 15px;
-        width: 120px !important;
-        font-size: 14px !important;
+        border-radius: 20px;
+        width: 110px !important;
     }
 
-    /* Rocket Button */
+    /* Rocket Button Style */
     button[kind="secondary"] {
         border-radius: 50% !important;
-        width: 45px !important;
-        height: 45px !important;
-        min-width: 45px !important;
+        width: 42px !important;
+        height: 42px !important;
+        min-width: 42px !important;
         background-color: #2b2b2b !important;
         border: none !important;
+        padding: 0 !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -117,10 +113,10 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 7. THE WIDE CHAT BAR
+# 7. THE UNBREAKABLE CHAT BAR
 with st.container():
-    # Ratios set to give Column 2 (the text box) the maximum clickable area
-    c1, c2, c3 = st.columns([1, 5, 0.5])
+    # We use st.columns but the CSS above forces them to NEVER wrap
+    c1, c2, c3 = st.columns([1, 4, 0.5])
     
     with c1:
         mode = st.selectbox("Mode", ["Fast", "Thinking", "Pro"], label_visibility="collapsed", key="active_mode")
