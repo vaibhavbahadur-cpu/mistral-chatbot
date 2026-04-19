@@ -41,17 +41,10 @@ st.markdown("""
         align-items: center !important;
     }
 
-    div[data-testid="column"] {
-        width: auto !important;
-        flex: none !important;
-    }
-    div[data-testid="column"]:nth-of-type(2) {
-        flex-grow: 1 !important;
-    }
+    div[data-testid="column"] { width: auto !important; flex: none !important; }
+    div[data-testid="column"]:nth-of-type(2) { flex-grow: 1 !important; }
 
-    div[data-testid="stChatInput"], .stChatInputContainer {
-        display: none !important;
-    }
+    div[data-testid="stChatInput"], .stChatInputContainer { display: none !important; }
 
     .stTextInput input {
         background-color: transparent !important;
@@ -134,7 +127,6 @@ if st.session_state.temp_input:
     st.session_state.temp_input = "" 
     
     st.session_state.messages.append({"role": "user", "content": query_to_send})
-    
     with st.chat_message("user"):
         st.markdown(query_to_send)
             
@@ -144,16 +136,16 @@ if st.session_state.temp_input:
         
         with st.spinner(""):
             try:
-                # Updated Mapping: Use 1.5 versions if 2.5 is not yet available for your key
+                # UPDATED MAPPING TO 2.5
                 m_map = {
-                    "Fast": "gemini-1.5-flash", 
-                    "Thinking": "gemini-1.5-pro", 
-                    "Pro": "gemini-1.5-pro"
+                    "Fast": "gemini-2.5-flash", 
+                    "Thinking": "gemini-2.5-pro", 
+                    "Pro": "gemini-2.5-pro"
                 }
                 
                 model = genai.GenerativeModel(
                     model_name=m_map[mode],
-                    system_instruction="You are Mistral, a helpful and concise AI assistant."
+                    system_instruction="You are Mistral, a helpful assistant."
                 )
                 
                 history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.messages[:-1]]
@@ -167,8 +159,7 @@ if st.session_state.temp_input:
                 message_placeholder.markdown(full_response)
                 
             except Exception as e:
-                # This will tell you if it's a "Model not found" (404) or "Quota exceeded" (429) error
-                st.error(f"Model Error ({mode}): {e}")
+                st.error(f"Error using {mode} (Model 2.5): {e}")
 
     st.session_state.messages.append({"role": "assistant", "content": full_response})
     st.rerun()
