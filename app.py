@@ -14,7 +14,6 @@ st.markdown("""
     .logo-container { display: flex; justify-content: center; padding: 10px; }
     .spinning-logo { width: 80px; border-radius: 50%; }
 
-    /* THE PILL FOOTER - Locked to bottom and forced to one line */
     .pill-footer {
         position: fixed;
         bottom: 30px;
@@ -100,8 +99,14 @@ genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 # 5. Initialize Session State
 if "messages" not in st.session_state:
     st.session_state.messages = []
-if "user_query" not in st.session_state:
-    st.session_state.user_query = ""
+if "temp_input" not in st.session_state:
+    st.session_state.temp_input = ""
+
+# NEW: Callback function to handle the submission and clear the bar
+def handle_submit():
+    if st.session_state.user_query.strip() != "":
+        st.session_state.temp_input = st.session_state.user_query
+        st.session_state.user_query = "" # This works inside a callback!
 
 # 6. Display Chat History
 st.markdown('<div class="main-chat-container">', unsafe_allow_html=True)
@@ -116,22 +121,22 @@ c1, c2, c3 = st.columns([1, 4, 0.5])
 with c1:
     mode = st.selectbox("Mode", ["Fast", "Thinking", "Pro"], label_visibility="collapsed", key="active_mode")
 with c2:
-    # We bind the input to st.session_state.user_query
-    user_input = st.text_input("Msg", label_visibility="collapsed", key="user_query", placeholder="Message Mistral...")
+    # Use the on_change callback to trigger the clear
+    st.text_input("Msg", label_visibility="collapsed", key="user_query", 
+                  placeholder="Message Mistral...", on_change=handle_submit)
 with c3:
+    # Button also triggers the callback logic via a manual check
     send_clicked = st.button("🚀")
+    if send_clicked:
+        handle_submit()
 st.markdown('</div>', unsafe_allow_html=True)
 
 # 8. Execution Logic
-# We check if a message exists and trigger processing
-if (send_clicked or user_input) and user_input.strip() != "":
-    # Save the query before clearing it
-    query_to_send = user_input
+# We look for content in 'temp_input' which was filled by the callback
+if st.session_state.temp_input:
+    query_to_send = st.session_state.temp_input
+    st.session_state.temp_input = "" # Reset temp storage
     
-    # CLEAR THE BAR: Reset the session state value for the input field
-    st.session_state.user_query = ""
-    
-    # Add to history
     st.session_state.messages.append({"role": "user", "content": query_to_send})
     
     with st.chat_message("user"):
@@ -163,5 +168,4 @@ if (send_clicked or user_input) and user_input.strip() != "":
                 st.error(f"Error: {e}")
 
     st.session_state.messages.append({"role": "assistant", "content": full_response})
-    # Rerun ensures the UI updates and the text bar looks empty to the user
     st.rerun()
