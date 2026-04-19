@@ -2,11 +2,12 @@ import streamlit as st
 import google.generativeai as genai
 import os
 import base64
+import time
 
 # 1. Page Configuration
 st.set_page_config(page_title="Mistral AI", page_icon="🤖", layout="centered")
 
-# 2. CSS for the Locked Single-Pill Bottom Bar
+# 2. CSS (Unbreakable Bottom Pill)
 st.markdown("""
     <style>
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -43,7 +44,6 @@ st.markdown("""
 
     div[data-testid="column"] { width: auto !important; flex: none !important; }
     div[data-testid="column"]:nth-of-type(2) { flex-grow: 1 !important; }
-
     div[data-testid="stChatInput"], .stChatInputContainer { display: none !important; }
 
     .stTextInput input {
@@ -52,9 +52,7 @@ st.markdown("""
         color: white !important;
         height: 45px !important;
     }
-
     .main-chat-container { margin-bottom: 120px; }
-    
     .stSelectbox div[data-baseweb="select"] {
         height: 35px;
         min-height: 35px;
@@ -62,19 +60,17 @@ st.markdown("""
         border-radius: 20px;
         width: 110px !important;
     }
-
     button[kind="secondary"] {
         border-radius: 50% !important;
         width: 42px !important;
         height: 42px !important;
         background-color: #2b2b2b !important;
         border: none !important;
-        padding: 0 !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Logo Display
+# 3. Logo
 logo_path = "mistral.JPG"
 if os.path.exists(logo_path):
     with open(logo_path, "rb") as f:
@@ -83,13 +79,13 @@ if os.path.exists(logo_path):
 
 st.title("Mistral AI")
 
-# 4. API Configuration
+# 4. API Init
 if "GEMINI_API_KEY" not in st.secrets:
-    st.error("Missing API Key! Please add it to Streamlit Secrets.")
+    st.error("Missing API Key!")
     st.stop()
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
-# 5. Initialize Session State
+# 5. State Init
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "temp_input" not in st.session_state:
@@ -100,14 +96,14 @@ def handle_submit():
         st.session_state.temp_input = st.session_state.user_query
         st.session_state.user_query = "" 
 
-# 6. Display Chat History
+# 6. Chat History
 st.markdown('<div class="main-chat-container">', unsafe_allow_html=True)
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 7. THE ONE-BAR CHAT INTERFACE
+# 7. Interface
 st.markdown('<div class="pill-footer">', unsafe_allow_html=True)
 c1, c2, c3 = st.columns([1, 4, 0.5])
 with c1:
@@ -116,17 +112,16 @@ with c2:
     st.text_input("Msg", label_visibility="collapsed", key="user_query", 
                   placeholder="Message Mistral...", on_change=handle_submit)
 with c3:
-    send_clicked = st.button("🚀")
-    if send_clicked:
+    if st.button("🚀"):
         handle_submit()
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 8. Execution Logic
+# 8. Logic
 if st.session_state.temp_input:
     query_to_send = st.session_state.temp_input
     st.session_state.temp_input = "" 
-    
     st.session_state.messages.append({"role": "user", "content": query_to_send})
+    
     with st.chat_message("user"):
         st.markdown(query_to_send)
             
@@ -134,9 +129,8 @@ if st.session_state.temp_input:
         message_placeholder = st.empty()
         full_response = ""
         
-        with st.spinner(""):
+        with st.spinner("Thinking..."):
             try:
-                # UPDATED MAPPING TO 2.5
                 m_map = {
                     "Fast": "gemini-2.5-flash", 
                     "Thinking": "gemini-2.5-pro", 
@@ -150,16 +144,32 @@ if st.session_state.temp_input:
                 
                 history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.messages[:-1]]
                 chat = model.start_chat(history=history)
-                response = chat.send_message(query_to_send, stream=True)
                 
-                for chunk in response:
-                    if chunk.text:
-                        full_response += chunk.text
-                        message_placeholder.markdown(full_response + "▌")
+                # Manual retry for 429 errors
+                max_retries = 3
+                for i in range(max_retries):
+                    try:
+                        response = chat.send_message(query_to_send, stream=True)
+                        for chunk in response:
+                            if chunk.text:
+                                full_response += chunk.text
+                                message_placeholder.markdown(full_response + "▌")
+                        break # Success!
+                    except Exception as e:
+                        if "429" in str(e) and i < max_retries - 1:
+                            time.sleep(2) # Wait 2 seconds and try again
+                            continue
+                        else:
+                            raise e
+
                 message_placeholder.markdown(full_response)
                 
             except Exception as e:
-                st.error(f"Error using {mode} (Model 2.5): {e}")
+                if "429" in str(e):
+                    st.warning(f"⚠️ **Quota Reached for {mode} mode.** Please wait 60 seconds or switch to 'Fast' mode.")
+                else:
+                    st.error(f"Error: {e}")
 
-    st.session_state.messages.append({"role": "assistant", "content": full_response})
+    if full_response:
+        st.session_state.messages.append({"role": "assistant", "content": full_response})
     st.rerun()
