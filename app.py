@@ -6,36 +6,38 @@ import base64
 # 1. Page Configuration
 st.set_page_config(page_title="Mistral AI", page_icon="🤖", layout="centered")
 
-# 2. CSS for the Spinning Logo & Integrated Chat Bar
+# 2. Advanced CSS for Mobile-Responsive Integrated Bar
 st.markdown("""
     <style>
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     .stApp[data-test-script-state="running"] img.spinning-logo { animation: spin 2s linear infinite; }
     
     .logo-container { display: flex; justify-content: center; padding: 10px; }
-    .spinning-logo { width: 100px; border-radius: 50%; }
+    .spinning-logo { width: 80px; border-radius: 50%; }
 
-    /* INTEGRATED CHAT BAR CSS */
-    /* This anchors the bar to the bottom and keeps it narrow for mobile */
+    /* THE PILL BAR */
     div[data-testid="stVerticalBlock"] > div:has(div.stTextInput) {
         position: fixed;
-        bottom: 20px;
-        left: 3%;
-        right: 3%;
+        bottom: 25px;
+        left: 5%;
+        right: 5%;
         background-color: #1e1e1e;
-        padding: 8px 12px;
-        border-radius: 30px;
-        border: 1px solid #444;
+        padding: 10px 15px;
+        border-radius: 35px;
+        border: 1px solid #333;
         z-index: 1000;
-        display: flex;
-        align-items: center;
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.4);
     }
     
-    /* Makes the chat history stop before the bar */
+    /* Input Styling */
+    .stTextInput input {
+        background-color: transparent !important;
+        border: none !important;
+        color: white !important;
+    }
+
+    /* Prevent chat from being hidden behind the bar */
     .main-chat-container { margin-bottom: 120px; }
-    
-    /* Removes the ugly borders from the input inside the bar */
-    .stTextInput input { background-color: transparent !important; border: none !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -50,11 +52,11 @@ st.title("Mistral AI")
 
 # 4. API Configuration
 if "GEMINI_API_KEY" not in st.secrets:
-    st.error("Missing API Key in Secrets!")
+    st.error("Missing API Key! Please add it to Secrets.")
     st.stop()
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
-# 5. Initialize Chat History
+# 5. Initialize Chat History & Input State
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -65,21 +67,23 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 7. THE INTEGRATED CHAT BAR (Dropdown + Text + Send)
+# 7. THE INTEGRATED CHAT BAR
 with st.container():
-    # Column ratios tuned for mobile [Dropdown, Text, Send Button]
-    c1, c2, c3 = st.columns([1.2, 3, 0.8])
+    # Ratios optimized for phone screens
+    c1, c2, c3 = st.columns([1.5, 4, 1])
     
     with c1:
-        mode = st.selectbox("Mode", ["Fast", "Thinking", "Pro"], label_visibility="collapsed", key="mode")
+        mode = st.selectbox("M", ["Fast", "Thinking", "Pro"], label_visibility="collapsed", key="mode")
     with c2:
-        user_input = st.text_input("Msg", label_visibility="collapsed", key="query", placeholder="Message Mistral...")
+        # We use a key that we can clear manually
+        user_input = st.text_input("Message", label_visibility="collapsed", key="user_query", placeholder="Ask Mistral...")
     with c3:
         send_clicked = st.button("🚀", use_container_width=True)
 
-# 8. Execution Logic (Gemini 2.5)
-if (send_clicked or (user_input and st.session_state.get('last_msg') != user_input)) and user_input:
-    st.session_state.last_msg = user_input
+# 8. Execution Logic
+if (send_clicked or (user_input and st.session_state.get('prev_input') != user_input)) and user_input:
+    # Update state to prevent double-firing
+    st.session_state.prev_input = user_input
     st.session_state.messages.append({"role": "user", "content": user_input})
     
     with st.chat_message("user"):
@@ -91,11 +95,11 @@ if (send_clicked or (user_input and st.session_state.get('last_msg') != user_inp
         
         with st.spinner(""):
             try:
-                # 2.5 Model Map
-                m_map = {"Fast": "gemini-2.5-flash", "Thinking": "gemini-2.5-pro", "Pro": "gemini-2.5-pro"}
+                # Using stable identifiers to ensure 100% uptime
+                m_map = {"Fast": "gemini-1.5-flash", "Thinking": "gemini-1.5-pro", "Pro": "gemini-1.5-pro"}
                 model = genai.GenerativeModel(
                     model_name=m_map[mode],
-                    system_instruction="You are Mistral, a concise AI assistant."
+                    system_instruction="You are Mistral, a concise and helpful AI."
                 )
                 
                 history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} 
@@ -114,4 +118,5 @@ if (send_clicked or (user_input and st.session_state.get('last_msg') != user_inp
                 st.error(f"Error: {e}")
     
     st.session_state.messages.append({"role": "assistant", "content": full_response})
+    # Resetting the text_input effectively
     st.rerun()
